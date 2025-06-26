@@ -158,7 +158,9 @@ def train_pytorch_model(model, train_loader, val_loader, epochs=100, lr=0.001, d
             
             optimizer.zero_grad()
             outputs = model(X_batch)
-            loss = criterion(outputs.squeeze(), y_batch.float())
+            # FIX: Use squeeze(-1) to only remove the last dimension
+            outputs = outputs.squeeze(-1)
+            loss = criterion(outputs, y_batch.float())
             loss.backward()
             optimizer.step()
             
@@ -171,7 +173,9 @@ def train_pytorch_model(model, train_loader, val_loader, epochs=100, lr=0.001, d
             for X_batch, y_batch in val_loader:
                 X_batch, y_batch = X_batch.to(device), y_batch.to(device)
                 outputs = model(X_batch)
-                loss = criterion(outputs.squeeze(), y_batch.float())
+                # FIX: Use squeeze(-1) to only remove the last dimension
+                outputs = outputs.squeeze(-1)
+                loss = criterion(outputs, y_batch.float())
                 val_loss += loss.item()
         
         avg_train_loss = train_loss / len(train_loader)
@@ -292,12 +296,16 @@ def optimize_mlp(trial, X_train, y_train, X_val, y_val, input_dim):
     lr = trial.suggest_float('lr', 0.0001, 0.01, log=True)
     batch_size = trial.suggest_categorical('batch_size', [32, 64, 128])
     
+    # Ensure batch_size is not larger than dataset size
+    batch_size = min(batch_size, len(X_train))
+    
     # Prepare data loaders
     train_dataset = TensorDataset(torch.FloatTensor(X_train), torch.LongTensor(y_train))
     val_dataset = TensorDataset(torch.FloatTensor(X_val), torch.LongTensor(y_val))
     
-    # FIXED: Added drop_last=True to prevent batch size of 1
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
+    # Set drop_last based on dataset size
+    drop_last = len(train_dataset) > batch_size
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=drop_last)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
     # Create and train model
@@ -311,7 +319,7 @@ def optimize_mlp(trial, X_train, y_train, X_val, y_val, input_dim):
     trained_model.eval()
     trained_model = trained_model.to('cpu')  # Move to CPU for inference
     with torch.no_grad():
-        y_pred_proba = trained_model(torch.FloatTensor(X_val)).squeeze().numpy()
+        y_pred_proba = trained_model(torch.FloatTensor(X_val)).squeeze(-1).numpy()
     
     score = roc_auc_score(y_val, y_pred_proba)
     
@@ -329,7 +337,7 @@ def evaluate_model(model, X_val, y_val, model_name, is_pytorch=False):
     if is_pytorch:
         model.eval()
         with torch.no_grad():
-            y_pred_proba = model(torch.FloatTensor(X_val)).squeeze().numpy()
+            y_pred_proba = model(torch.FloatTensor(X_val)).squeeze(-1).numpy()
     else:
         y_pred_proba = model.predict_proba(X_val)[:, 1]
     
@@ -585,12 +593,16 @@ def train_mlp(X_train, y_train, X_val, y_val, target_column,
         lr = 0.001
         batch_size = 64
     
+    # Ensure batch_size is not larger than dataset size
+    batch_size = min(batch_size, len(X_train))
+    
     # Prepare data loaders
     train_dataset = TensorDataset(torch.FloatTensor(X_train), torch.LongTensor(y_train))
     val_dataset = TensorDataset(torch.FloatTensor(X_val), torch.LongTensor(y_val))
     
-    # FIXED: Added drop_last=True to prevent batch size of 1
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
+    # Set drop_last based on dataset size
+    drop_last = len(train_dataset) > batch_size
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=drop_last)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
     # Create and train model
@@ -694,12 +706,16 @@ def train_all_models(X_train, y_train, X_val, y_val, target_column, n_trials=50)
     # Default
     input_dim = X_train.shape[1]
     
+    # Ensure batch size is appropriate for dataset size
+    default_batch_size = min(64, len(X_train) // 2)
+    
     train_dataset = TensorDataset(torch.FloatTensor(X_train), torch.LongTensor(y_train))
     val_dataset = TensorDataset(torch.FloatTensor(X_val), torch.LongTensor(y_val))
     
-    # FIXED: Added drop_last=True to prevent batch size of 1
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, drop_last=True)
-    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False)
+    # Set drop_last based on dataset size
+    drop_last = len(train_dataset) > default_batch_size
+    train_loader = DataLoader(train_dataset, batch_size=default_batch_size, shuffle=True, drop_last=drop_last)
+    val_loader = DataLoader(val_dataset, batch_size=default_batch_size, shuffle=False)
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Training MLP on {device}")
@@ -824,7 +840,7 @@ def predict_probabilities(csv_path, target_column, model_type='best', base_path=
     # Make predictions
     if selected_model == 'mlp':
         with torch.no_grad():
-            probabilities = model(torch.FloatTensor(X_new_scaled)).squeeze().numpy()
+            probabilities = model(torch.FloatTensor(X_new_scaled)).squeeze(-1).numpy()
     else:
         probabilities = model.predict_proba(X_new_scaled)[:, 1]
     
