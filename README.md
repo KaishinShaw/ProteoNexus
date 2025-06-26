@@ -49,7 +49,7 @@ ProteoNexus is a comprehensive platform designed to decode the complex relations
 ## 💻 Repository Content
 
 This repository includes the core computational scripts for:
--   **pQTL Analysis**: Scripts for running GEMMA and SuSiE.
+-   **pQTL Analysis**: Scripts for running `GEMMA` and `SuSiE`.
 -   **Mediation Analysis**: R scripts utilizing the `medflex` package.
 -   **Model Training**: Python scripts for hyperparameter optimization of PLR, XGBoost, LightGBM, and MLP models.
 -   **Prediction**: Scripts to apply the trained models to new data.
