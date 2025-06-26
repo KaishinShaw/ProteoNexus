@@ -13,7 +13,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 if len(sys.argv) < 2:
-    print("Usage: python3 train.py \"['COLUMN_NAME']\"")
+    print("Usage: python3 my_script.py \"['COLUMN_NAME']\"")
     sys.exit(1)
 
 target_columns = ast.literal_eval(sys.argv[1])
@@ -279,14 +279,9 @@ def optimize_mlp(trial, X_train, y_train, X_val, y_val, input_dim):
     train_dataset = TensorDataset(torch.FloatTensor(X_train), torch.LongTensor(y_train))
     val_dataset = TensorDataset(torch.FloatTensor(X_val), torch.LongTensor(y_val))
     
-    train_loader = DataLoader(train_dataset,
-                            batch_size=batch_size,
-                            shuffle=True,
-                            drop_last=True)
-    val_loader   = DataLoader(val_dataset,
-                            batch_size=batch_size,
-                            shuffle=False,
-                            drop_last=True)
+    # FIXED: Added drop_last=True to prevent batch size of 1
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
     # Create and train model
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -577,7 +572,8 @@ def train_mlp(X_train, y_train, X_val, y_val, target_column,
     train_dataset = TensorDataset(torch.FloatTensor(X_train), torch.LongTensor(y_train))
     val_dataset = TensorDataset(torch.FloatTensor(X_val), torch.LongTensor(y_val))
     
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    # FIXED: Added drop_last=True to prevent batch size of 1
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
     # Create and train model
@@ -684,7 +680,8 @@ def train_all_models(X_train, y_train, X_val, y_val, target_column, n_trials=50)
     train_dataset = TensorDataset(torch.FloatTensor(X_train), torch.LongTensor(y_train))
     val_dataset = TensorDataset(torch.FloatTensor(X_val), torch.LongTensor(y_val))
     
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+    # FIXED: Added drop_last=True to prevent batch size of 1
+    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, drop_last=True)
     val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False)
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
