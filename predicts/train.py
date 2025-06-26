@@ -279,8 +279,14 @@ def optimize_mlp(trial, X_train, y_train, X_val, y_val, input_dim):
     train_dataset = TensorDataset(torch.FloatTensor(X_train), torch.LongTensor(y_train))
     val_dataset = TensorDataset(torch.FloatTensor(X_val), torch.LongTensor(y_val))
     
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(train_dataset,
+                            batch_size=batch_size,
+                            shuffle=True,
+                            drop_last=True)
+    val_loader   = DataLoader(val_dataset,
+                            batch_size=batch_size,
+                            shuffle=False,
+                            drop_last=True)
     
     # Create and train model
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
