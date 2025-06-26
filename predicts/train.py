@@ -80,6 +80,23 @@ def split_and_scale_data(X, y, test_size=0.2, random_state=42):
     """
     Split data into train/validation sets and apply standardization
     """
+    # Check if we have enough samples for stratified split
+    min_samples_per_class = 2
+    unique_classes, class_counts = np.unique(y, return_counts=True)
+    
+    # Check if any class has too few samples
+    if len(unique_classes) < 2:
+        raise ValueError(f"Only one class present in the data. Need at least 2 classes for classification.")
+    
+    for cls, count in zip(unique_classes, class_counts):
+        if count < min_samples_per_class:
+            raise ValueError(f"Class {cls} has only {count} samples. Need at least {min_samples_per_class} samples per class.")
+    
+    # Check if we have enough samples for the split
+    min_samples_for_split = int(1 / test_size) + 1
+    if len(y) < min_samples_for_split:
+        raise ValueError(f"Need at least {min_samples_for_split} samples to split with test_size={test_size}. Got {len(y)} samples.")
+    
     # Split data
     X_train, X_val, y_train, y_val = train_test_split(
         X, y, test_size=test_size, random_state=random_state, stratify=y
@@ -847,6 +864,9 @@ if os.path.exists(all_results_file):
 else:
     all_results = {}
 
+# Create summary for skipped columns
+skipped_columns = []
+
 for target_column in target_columns:
     
     if os.path.exists(all_results_file):
@@ -856,51 +876,124 @@ for target_column in target_columns:
     print(f"\n{'='*60}")
     print(f"Processing target: {target_column}")
     print(f"{'='*60}")
+    
+    # Drop NaN values for the target column
     proteo_dm = proteo_df.dropna(subset=[target_column])
     proteo = proteo_dm
-    # Prepare data
-    X, y, feature_columns = prepare_data(proteo, target_column)
     
-    # Split and scale data
-    X_train, X_val, y_train, y_val, scaler = split_and_scale_data(X, y)
+    # Check if we have enough samples
+    n_samples = len(proteo)
+    if n_samples == 0:
+        print(f"WARNING: No valid samples found for {target_column} (all values are NaN). Skipping this target.")
+        skipped_columns.append({
+            'target': target_column,
+            'reason': 'No valid samples (all NaN)',
+            'n_samples': 0
+        })
+        continue
     
-    print(f"Training samples: {len(X_train)}")
-    print(f"Validation samples: {len(X_val)}")
-    print(f"Number of features: {len(feature_columns)}")
-    print(f"Class distribution - Train: {np.bincount(y_train)}")
-    print(f"Class distribution - Val: {np.bincount(y_val)}")
+    # Check class distribution
+    unique_classes, class_counts = np.unique(proteo[target_column].values, return_counts=True)
+    print(f"Total samples after dropping NaN: {n_samples}")
+    print(f"Class distribution: {dict(zip(unique_classes, class_counts))}")
     
-    # Train all models
-    results, trained_models = train_all_models(X_train, y_train, X_val, y_val, 
-                                              target_column, n_trials=20)
+    # Check if we have both classes
+    if len(unique_classes) < 2:
+        print(f"WARNING: Only one class present for {target_column}. Need at least 2 classes for classification. Skipping this target.")
+        skipped_columns.append({
+            'target': target_column,
+            'reason': f'Only one class present ({unique_classes[0]})',
+            'n_samples': n_samples,
+            'class_distribution': dict(zip(unique_classes, class_counts))
+        })
+        continue
     
-    # Create save directory
-    save_path = f'./results/{target_column}'
-    os.makedirs(save_path, exist_ok=True)
+    # Check minimum samples per class
+    min_class_samples = min(class_counts)
+    if min_class_samples < 2:
+        print(f"WARNING: Insufficient samples in minority class for {target_column}. Skipping this target.")
+        skipped_columns.append({
+            'target': target_column,
+            'reason': f'Insufficient samples in minority class (min={min_class_samples})',
+            'n_samples': n_samples,
+            'class_distribution': dict(zip(unique_classes, class_counts))
+        })
+        continue
     
-    # Plot ROC curves
-    plot_roc_curves(results, target_column, save_path)
+    # Check if we have enough samples for train/test split
+    min_samples_needed = 10  # Minimum reasonable number for 80/20 split
+    if n_samples < min_samples_needed:
+        print(f"WARNING: Insufficient total samples for {target_column} ({n_samples} < {min_samples_needed}). Skipping this target.")
+        skipped_columns.append({
+            'target': target_column,
+            'reason': f'Insufficient total samples ({n_samples} < {min_samples_needed})',
+            'n_samples': n_samples,
+            'class_distribution': dict(zip(unique_classes, class_counts))
+        })
+        continue
     
-    # Save metrics comparison (as separate plots)
-    metrics_df = save_metrics_comparison(results, target_column, save_path)
-    
-    # Save models and results
-    save_models_and_results(trained_models, scaler, feature_columns, target_column, results)
-    
-    # Store results
-    all_results[target_column] = {
-        'results': results,
-        'metrics_df': metrics_df,
-        'trained_models': trained_models
-    }
-
-    with open(all_results_file, 'wb') as f:
-        pickle.dump(all_results, f)
-    print(f"Saved all_results for target '{target_column}' to '{all_results_file}'.")
+    try:
+        # Prepare data
+        X, y, feature_columns = prepare_data(proteo, target_column)
+        
+        # Split and scale data
+        X_train, X_val, y_train, y_val, scaler = split_and_scale_data(X, y)
+        
+        print(f"Training samples: {len(X_train)}")
+        print(f"Validation samples: {len(X_val)}")
+        print(f"Number of features: {len(feature_columns)}")
+        print(f"Class distribution - Train: {np.bincount(y_train)}")
+        print(f"Class distribution - Val: {np.bincount(y_val)}")
+        
+        # Train all models
+        results, trained_models = train_all_models(X_train, y_train, X_val, y_val, 
+                                                  target_column, n_trials=20)
+        
+        # Create save directory
+        save_path = f'./results/{target_column}'
+        os.makedirs(save_path, exist_ok=True)
+        
+        # Plot ROC curves
+        plot_roc_curves(results, target_column, save_path)
+        
+        # Save metrics comparison (as separate plots)
+        metrics_df = save_metrics_comparison(results, target_column, save_path)
+        
+        # Save models and results
+        save_models_and_results(trained_models, scaler, feature_columns, target_column, results)
+        
+        # Store results
+        all_results[target_column] = {
+            'results': results,
+            'metrics_df': metrics_df,
+            'trained_models': trained_models
+        }
+        
+        with open(all_results_file, 'wb') as f:
+            pickle.dump(all_results, f)
+        print(f"Saved all_results for target '{target_column}' to '{all_results_file}'.")
+        
+    except Exception as e:
+        print(f"ERROR processing {target_column}: {str(e)}")
+        skipped_columns.append({
+            'target': target_column,
+            'reason': f'Error during processing: {str(e)}',
+            'n_samples': n_samples
+        })
+        continue
     
     # Clear memory after each target column
     clear_gpu_memory()
     gc.collect()
+
+# Save summary of skipped columns
+if skipped_columns:
+    skipped_df = pd.DataFrame(skipped_columns)
+    skipped_df.to_csv('skipped_columns_summary.csv', index=False)
+    print(f"\n\nSkipped {len(skipped_columns)} columns. Summary saved to 'skipped_columns_summary.csv'")
+    print("\nSkipped columns:")
+    for skip_info in skipped_columns:
+        print(f"  - {skip_info['target']}: {skip_info['reason']}")
 
 print("\n\nTraining completed for all target columns!")
 
@@ -935,4 +1028,5 @@ def create_model_summary_report(all_results, save_path='./results'):
     return summary_df
 
 # Generate summary report after training all models
-summary_report = create_model_summary_report(all_results)
+if all_results:
+    summary_report = create_model_summary_report(all_results)
