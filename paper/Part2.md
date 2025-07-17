@@ -1,5 +1,5 @@
 
-## Case Study: Comprehensive Analysis of Dementia-Associated Protein Pathways Using ProteoNexus
+## Case Study: Analysis of Dementia-Associated Protein Pathways Using ProteoNexus
 
 To demonstrate the analytical capabilities and biological insights afforded by ProteoNexus, we conducted a comprehensive investigation of dementia, a complex neurodegenerative disorder with multifactorial etiology. This case study illustrates how the platform enables systematic exploration of protein-mediated pathways linking diverse risk factors to disease outcomes.
 
@@ -21,7 +21,7 @@ The most robust associations were observed for measures of muscle strength and b
 
 [Picture Here]
 
-Sex-stratified analyses revealed both shared and distinct protein mediation patterns between males and females. A core set of seven proteins—BCAN, EDA2R, GDF15, GFAP, NEFL, TNFRSF10B, and VGF—demonstrated significant mediation effects across the whole cohort as well as in sex-specific analyses. However, important sex-specific pathways were also identified. For instance, the pathway linking trunk fat percentage to dementia through VGF protein mediation was statistically significant only in males, with an indirect effect of -0.00414 (SE = 0.00105, adjusted p-value = 0.028), while no significant effects were observed in females or the combined cohort. Conversely, the mediation of waist circumference effects on dementia through GDF15, BCAN, and MENT proteins was significant exclusively in females, with no corresponding signals in males or the combined analysis. These sex-specific differences in protein mediation pathways suggest that the molecular mechanisms linking body composition to cognitive decline may differ fundamentally between males and females, with implications for personalized risk assessment and intervention strategies.
+Sex-stratified analyses revealed both shared and distinct protein mediation patterns between males and females. A core set of seven proteins—BCAN, EDA2R, GDF15, GFAP, NEFL, TNFRSF10B, and VGF—demonstrated significant mediation effects across the whole cohort as well as in sex-specific analyses. However, important sex-specific pathways were also identified. For instance, the pathway linking trunk fat percentage to dementia through VGF protein mediation was statistically significant in males, with an indirect effect of -0.00414 (SE = 0.00105, adjusted p-value = 0.028), while no significant effects were observed in females. Conversely, the mediation of waist circumference effects on dementia through GDF15, BCAN, and MENT proteins was significant exclusively in females, with no corresponding signals in males or the combined analysis. These sex-specific differences in protein mediation pathways suggest that the molecular mechanisms linking body composition to cognitive decline may differ fundamentally between males and females, with implications for personalized risk assessment and intervention strategies.
 
 ### Environment-to-Protein-to-Dementia Pathways
 
@@ -35,7 +35,7 @@ Sex-stratified analysis of environmental pathways revealed nuanced patterns of p
 
 ### Genotype-to-Protein-to-Dementia Pathways
 
-Genetic analysis identified twelve independent single nucleotide polymorphisms (SNPs) that influence dementia risk through the mediation of ten distinct proteins. Consistent with established genetic epidemiology, six of these variants mapped to the APOE locus, confirming the central role of apolipoprotein E in dementia pathogenesis. The mediation of these APOE variants through the APOE protein itself validates the direct functional consequences of genetic variation at this locus.
+Genetic analysis identified twelve independent single nucleotide polymorphisms (SNPs) that influence dementia risk through the mediation of ten distinct proteins. Consistent with established genetic epidemiology, ? of these variants mapped to the APOE locus, confirming the central role of apolipoprotein E in dementia pathogenesis. The mediation of these APOE variants? through the APOE protein itself validates the direct functional consequences of genetic variation at this locus.
 
 A particularly striking finding emerged from sex-stratified genetic analysis. The rs7412 variant, a key SNP defining the APOE ε2 allele, showed mediation of dementia risk through APOE protein exclusively in females, with no significant mediation observed in males. Conversely, rs157580 demonstrated APOE-mediated effects on dementia risk only in males. These sex-specific genetic pathways reveal that even well-established genetic risk factors may operate through different molecular mechanisms in males and females, suggesting that the penetrance and expressivity of genetic variants in dementia risk are modified by biological sex.
 
