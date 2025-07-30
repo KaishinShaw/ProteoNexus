@@ -3,8 +3,8 @@
 # Publication-Quality AUC Heatmap Generation for Scientific Journals
 # Author: Hydraulik
 # Date: 2025-01-30
-# Description: Generate high-quality heatmaps for AUC values with professional
-#              scientific color schemes suitable for SCI journal submission
+# Description: Generate high-quality heatmaps for AUC values without cell 
+#              annotations, suitable for SCI journal submission
 ################################################################################
 
 # --- Package Management -------------------------------------------------------
@@ -104,16 +104,10 @@ nature_blue <- colorRampPalette(c("#F7FBFF", "#DEEBF7", "#C6DBEF",
                                   "#9ECAE1", "#6BAED6", "#4292C6", 
                                   "#2171B5", "#08519C", "#08306B"))(100)
 
-# 2. Diverging palette for positive/negative values (Publication standard)
-sci_diverging <- colorRampPalette(c("#053061", "#2166AC", "#4393C3", 
-                                    "#92C5DE", "#D1E5F0", "#F7F7F7", 
-                                    "#FDDBC7", "#F4A582", "#D6604D", 
-                                    "#B2182B", "#67001F"))(100)
-
-# 3. Viridis palette (colorblind-friendly)
+# 2. Viridis palette (colorblind-friendly)
 viridis_palette <- viridis(100, option = "D", begin = 0.05, end = 0.95)
 
-# 4. Custom scientific palette (Cell/Science style)
+# 3. Custom scientific palette (Cell/Science style)
 cell_palette <- colorRampPalette(c("#FFF5F0", "#FEE0D2", "#FCBBA1", 
                                    "#FC9272", "#FB6A4A", "#EF3B2C", 
                                    "#CB181D", "#A50F15", "#67000D"))(100)
@@ -128,22 +122,21 @@ breaks_seq <- seq(data_range[1], data_range[2], length.out = 101)
 legend_breaks <- pretty(data_range, n = 5)
 
 # --- Generate pheatmap with professional settings -----------------------------
-# Calculate dimensions for 5:1 ratio
+# Calculate dimensions for optimal layout
 n_cols <- ncol(mat)
 n_rows <- nrow(mat)
 
-# For pheatmap, we need to calculate cellwidth and cellheight
-# to achieve 5:1 ratio for the heatmap part
-cellheight_base <- 15  # Base height for each cell
-cellwidth_calc <- (cellheight_base * n_rows * 5) / n_cols  # Calculate width for 5:1 ratio
+# Calculate cell dimensions for good proportions
+cellheight_base <- 20  # Base height for each cell
+cellwidth_calc <- 35   # Width for each cell
 
-# Define output dimensions (inches) - adjusted for 5:1 ratio
-fig_width <- 10   # Total figure width including legend
-fig_height <- 2.5  # Compact height for 5:1 ratio
+# Define output dimensions (inches)
+fig_width <- max(8, (n_cols * cellwidth_calc / 72) + 2.5)  # Add space for legend
+fig_height <- max(3, (n_rows * cellheight_base / 72) + 1.5)  # Add space for margins
 
-# Create high-resolution PDF (5:1 ratio version)
+# Create high-resolution PDF
 cairo_pdf(
-    filename  = "Figure_1_AUC_Heatmap_pheatmap_5to1.pdf",
+    filename  = "Figure_1_AUC_Heatmap_pheatmap.pdf",
     width     = fig_width,
     height    = fig_height,
     family    = font_family,
@@ -155,11 +148,11 @@ pheatmap(
     mat               = mat,
     color             = nature_blue,  # Professional blue gradient
     breaks            = breaks_seq,
-    cluster_rows      = FALSE,
+    cluster_rows      = FALSE,        # No clustering to maintain order
     cluster_cols      = FALSE,
-    show_rownames     = TRUE,
-    show_colnames     = FALSE,        # Hide column names
-    fontsize_row      = 10,           # Adjusted for compact layout
+    show_rownames     = TRUE,         # Show row names on left
+    show_colnames     = FALSE,        # Hide column names for cleaner look
+    fontsize_row      = 12,           # Font size for row labels
     cellwidth         = cellwidth_calc,
     cellheight        = cellheight_base,
     legend            = TRUE,
@@ -170,42 +163,15 @@ pheatmap(
     main              = "",            # No title (add in figure caption)
     gaps_row          = NULL,
     gaps_col          = NULL,
-    display_numbers   = FALSE          # No numbers for this version
+    display_numbers   = FALSE,         # No numbers displayed
+    annotation_legend = TRUE,
+    annotation_names_row = TRUE,
+    annotation_names_col = FALSE
 )
 
-dev.off()
-
-# Alternative version with values displayed (normal proportions)
-cairo_pdf(
-    filename  = "Figure_1_AUC_Heatmap_pheatmap_with_values.pdf",
-    width     = 8,
-    height    = 3,
-    family    = font_family,
-    pointsize = 10
-)
-
-pheatmap(
-    mat               = mat,
-    color             = nature_blue,
-    breaks            = breaks_seq,
-    cluster_rows      = FALSE,
-    cluster_cols      = FALSE,
-    show_rownames     = TRUE,
-    show_colnames     = FALSE,        # Hide column names
-    fontsize_row      = 12,
-    fontsize_number   = 8,            # Font size for cell values
-    cellwidth         = 25,
-    cellheight        = 22,
-    legend            = TRUE,
-    legend_breaks     = legend_breaks,
-    legend_labels     = sprintf("%.2f", legend_breaks),
-    border_color      = "white",
-    na_col            = "#E5E5E5",
-    main              = "",
-    display_numbers   = TRUE,         # Show values
-    number_format     = "%.3f",       # Format for displayed numbers
-    number_color      = "black"       # Color for numbers
-)
+# Add legend title manually
+grid.text("AUC", x = unit(0.85, "npc"), y = unit(0.95, "npc"), 
+          gp = gpar(fontsize = 11, fontface = "bold"))
 
 dev.off()
 
@@ -224,7 +190,7 @@ if (has_negative && has_positive) {
         breaks = c(-max_abs, -max_abs/2, 0, max_abs/2, max_abs),
         colors = c("#053061", "#4393C3", "#F7F7F7", "#D6604D", "#67001F")
     )
-    legend_title <- "AUC Value"
+    legend_title <- "AUC"
     legend_at <- seq(-max_abs, max_abs, length.out = 5)
 } else {
     # Use sequential palette
@@ -232,17 +198,17 @@ if (has_negative && has_positive) {
         breaks = seq(data_range[1], data_range[2], length.out = 100),
         colors = viridis_palette
     )
-    legend_title <- "AUC Score"
+    legend_title <- "AUC"
     legend_at <- pretty(data_range, n = 5)
 }
 
 # --- Create ComplexHeatmap with publication settings --------------------------
-# Calculate dimensions for 5:1 ratio
-heatmap_height <- 1.5  # Total height in cm for 3 rows
-heatmap_width <- heatmap_height * 5  # Width = 5 * height for 5:1 ratio
+# Calculate dimensions for optimal layout
+heatmap_height <- unit(n_rows * 0.8, "cm")
+heatmap_width <- unit(n_cols * 1.2, "cm")
 
-# Version without cell values (5:1 ratio)
-ht_5to1 <- Heatmap(
+# Create heatmap without cell values
+ht <- Heatmap(
     matrix              = mat,
     name                = legend_title,
     col                 = col_fun,
@@ -254,52 +220,9 @@ ht_5to1 <- Heatmap(
     show_column_dend    = FALSE,
     
     # Row/column names
-    show_row_names      = TRUE,
+    show_row_names      = TRUE,       # Show row names
     show_column_names   = FALSE,      # Hide column names
-    row_names_side      = "left",
-    
-    # Text formatting
-    row_names_gp        = gpar(fontsize = 10, fontfamily = font_family),
-    
-    # Cell formatting
-    rect_gp             = gpar(col = "white", lwd = 0.5),
-    na_col              = "#E5E5E5",
-    
-    # Legend settings
-    heatmap_legend_param = list(
-        title           = legend_title,
-        title_position  = "topleft",
-        at              = legend_at,
-        labels          = sprintf("%.2f", legend_at),
-        title_gp        = gpar(fontsize = 10, fontface = "bold", 
-                               fontfamily = font_family),
-        labels_gp       = gpar(fontsize = 9, fontfamily = font_family),
-        legend_height   = unit(25, "mm"),  # Smaller legend for compact layout
-        grid_width      = unit(3, "mm"),
-        border          = "black"
-    ),
-    
-    # Size settings for 5:1 ratio
-    width               = unit(heatmap_width, "cm"),
-    height              = unit(heatmap_height, "cm")
-)
-
-# Version with cell values (normal proportions)
-ht_with_values <- Heatmap(
-    matrix              = mat,
-    name                = legend_title,
-    col                 = col_fun,
-    
-    # Clustering settings
-    cluster_rows        = FALSE,
-    cluster_columns     = FALSE,
-    show_row_dend       = FALSE,
-    show_column_dend    = FALSE,
-    
-    # Row/column names
-    show_row_names      = TRUE,
-    show_column_names   = FALSE,      # Hide column names
-    row_names_side      = "left",
+    row_names_side      = "left",     # Row names on the left side
     
     # Text formatting
     row_names_gp        = gpar(fontsize = 12, fontfamily = font_family),
@@ -308,115 +231,131 @@ ht_with_values <- Heatmap(
     rect_gp             = gpar(col = "white", lwd = 0.5),
     na_col              = "#E5E5E5",
     
-    # Cell text - show values
-    cell_fun            = function(j, i, x, y, width, height, fill) {
-        if (!is.na(mat[i, j])) {
-            # Determine text color based on background
-            val <- mat[i, j]
-            bg_lightness <- col2rgb(fill)[1,1] / 255
-            text_col <- ifelse(bg_lightness > 0.5, "black", "white")
-            
-            grid.text(sprintf("%.3f", val), x, y, 
-                      gp = gpar(fontsize = 8, col = text_col, fontfamily = font_family))
-        }
-    },
-    
-    # Legend settings
+    # Legend settings - optimized for layout
     heatmap_legend_param = list(
         title           = legend_title,
         title_position  = "topleft",
         at              = legend_at,
         labels          = sprintf("%.2f", legend_at),
-        title_gp        = gpar(fontsize = 10, fontface = "bold", 
+        title_gp        = gpar(fontsize = 11, fontface = "bold", 
                                fontfamily = font_family),
-        labels_gp       = gpar(fontsize = 9, fontfamily = font_family),
-        legend_height   = unit(30, "mm"),
+        labels_gp       = gpar(fontsize = 10, fontfamily = font_family),
+        legend_height   = unit(min(40, n_rows * 10), "mm"),  # Scale with heatmap
         grid_width      = unit(4, "mm"),
         border          = "black"
     ),
     
-    # Size settings (normal proportions)
-    width               = unit(ncol(mat) * 0.8, "cm"),
-    height              = unit(nrow(mat) * 0.8, "cm")
+    # Size settings
+    width               = heatmap_width,
+    height              = heatmap_height
 )
 
 # --- Export to multiple formats -----------------------------------------------
-# Calculate figure dimensions for 5:1 ratio version
-fig_width_5to1  <- 10  # Total width including legend
-fig_height_5to1 <- 2   # Compact height
+# Calculate figure dimensions
+fig_width  <- max(8, (n_cols * 1.2 / 2.54) + 2)  # Convert cm to inches, add margin
+fig_height <- max(3, (n_rows * 0.8 / 2.54) + 1)
 
-# 1. PDF without values (5:1 ratio)
+# 1. PDF (vector format, best for publications)
 cairo_pdf(
-    filename  = "Figure_2_AUC_Heatmap_ComplexHeatmap_5to1.pdf",
-    width     = fig_width_5to1,
-    height    = fig_height_5to1,
+    filename  = "Figure_2_AUC_Heatmap_ComplexHeatmap.pdf",
+    width     = fig_width,
+    height    = fig_height,
     family    = font_family,
     pointsize = 10
 )
-draw(ht_5to1, 
-     heatmap_legend_side = "right",
-     padding = unit(c(2, 5, 2, 2), "mm"),
-     merge_legend = TRUE)
-dev.off()
-
-# 2. PDF with values (normal proportions)
-fig_width_normal  <- max(7, ncol(mat) * 0.3 + 2.5)
-fig_height_normal <- max(3, nrow(mat) * 0.4 + 1.5)
-
-cairo_pdf(
-    filename  = "Figure_2_AUC_Heatmap_ComplexHeatmap_with_values.pdf",
-    width     = fig_width_normal,
-    height    = fig_height_normal,
-    family    = font_family,
-    pointsize = 10
-)
-draw(ht_with_values, 
+draw(ht, 
      heatmap_legend_side = "right",
      padding = unit(c(5, 10, 5, 5), "mm"),
      merge_legend = TRUE)
 dev.off()
 
-# 3. TIFF (600 DPI for print quality - 5:1 ratio)
+# 2. TIFF (600 DPI for print quality)
 tiff(
-    filename    = "Figure_2_AUC_Heatmap_ComplexHeatmap_5to1.tiff",
-    width       = fig_width_5to1,
-    height      = fig_height_5to1,
+    filename    = "Figure_2_AUC_Heatmap_ComplexHeatmap.tiff",
+    width       = fig_width,
+    height      = fig_height,
     units       = "in",
     res         = 600,  # High resolution for print
     compression = "lzw"
 )
-draw(ht_5to1, 
+draw(ht, 
      heatmap_legend_side = "right",
-     padding = unit(c(2, 5, 2, 2), "mm"),
+     padding = unit(c(5, 10, 5, 5), "mm"),
      merge_legend = TRUE)
 dev.off()
 
-# 4. EPS (vector format - 5:1 ratio)
+# 3. EPS (vector format for certain journals)
 setEPS()
 postscript(
-    file       = "Figure_2_AUC_Heatmap_ComplexHeatmap_5to1.eps",
-    width      = fig_width_5to1,
-    height     = fig_height_5to1,
+    file       = "Figure_2_AUC_Heatmap_ComplexHeatmap.eps",
+    width      = fig_width,
+    height     = fig_height,
     paper      = "special",
     horizontal = FALSE,
     onefile    = FALSE,
     family     = font_family
 )
-draw(ht_5to1, 
+draw(ht, 
      heatmap_legend_side = "right",
-     padding = unit(c(2, 5, 2, 2), "mm"),
+     padding = unit(c(5, 10, 5, 5), "mm"),
      merge_legend = TRUE)
 dev.off()
 
-# 5. PNG (for presentations/web, 300 DPI - 5:1 ratio)
+# 4. PNG (for presentations/web, 300 DPI)
 png(
-    filename = "Figure_2_AUC_Heatmap_ComplexHeatmap_5to1.png",
-    width    = fig_width_5to1,
-    height   = fig_height_5to1,
+    filename = "Figure_2_AUC_Heatmap_ComplexHeatmap.png",
+    width    = fig_width,
+    height   = fig_height,
     units    = "in",
     res      = 300
 )
-draw(ht_5to1, 
+draw(ht, 
+     heatmap_legend_side = "right",
+     padding = unit(c(5, 10, 5, 5), "mm"),
+     merge_legend = TRUE)
+dev.off()
+
+# --- Create a compact version with 5:1 aspect ratio ---------------------------
+# Recalculate dimensions for 5:1 ratio
+compact_height <- 3  # cm
+compact_width <- compact_height * 5  # 5:1 ratio
+
+ht_compact <- Heatmap(
+    matrix              = mat,
+    name                = legend_title,
+    col                 = col_fun,
+    cluster_rows        = FALSE,
+    cluster_columns     = FALSE,
+    show_row_names      = TRUE,
+    show_column_names   = FALSE,
+    row_names_side      = "left",
+    row_names_gp        = gpar(fontsize = 10, fontfamily = font_family),
+    rect_gp             = gpar(col = "white", lwd = 0.5),
+    na_col              = "#E5E5E5",
+    heatmap_legend_param = list(
+        title           = legend_title,
+        title_position  = "topleft",
+        at              = legend_at,
+        labels          = sprintf("%.2f", legend_at),
+        title_gp        = gpar(fontsize = 10, fontface = "bold"),
+        labels_gp       = gpar(fontsize = 9),
+        legend_height   = unit(20, "mm"),  # Smaller for compact layout
+        grid_width      = unit(3, "mm"),
+        border          = "black"
+    ),
+    width               = unit(compact_width, "cm"),
+    height              = unit(compact_height, "cm")
+)
+
+# Export compact version
+cairo_pdf(
+    filename  = "Figure_3_AUC_Heatmap_Compact_5to1.pdf",
+    width     = 10,
+    height    = 2,
+    family    = font_family,
+    pointsize = 10
+)
+draw(ht_compact, 
      heatmap_legend_side = "right",
      padding = unit(c(2, 5, 2, 2), "mm"),
      merge_legend = TRUE)
@@ -424,17 +363,18 @@ dev.off()
 
 # --- Summary message ----------------------------------------------------------
 cat("\n================== Heatmap Generation Complete ==================\n")
-cat("Generated files:\n")
-cat("\n5:1 Ratio versions (without values):\n")
-cat("- Figure_1_AUC_Heatmap_pheatmap_5to1.pdf\n")
-cat("- Figure_2_AUC_Heatmap_ComplexHeatmap_5to1.pdf\n")
-cat("- Figure_2_AUC_Heatmap_ComplexHeatmap_5to1.tiff (600 DPI)\n")
-cat("- Figure_2_AUC_Heatmap_ComplexHeatmap_5to1.eps\n")
-cat("- Figure_2_AUC_Heatmap_ComplexHeatmap_5to1.png (300 DPI)\n")
-cat("\nNormal proportion versions (with values):\n")
-cat("- Figure_1_AUC_Heatmap_pheatmap_with_values.pdf\n")
-cat("- Figure_2_AUC_Heatmap_ComplexHeatmap_with_values.pdf\n")
-cat("\nColor schemes used:\n")
-cat("- Sequential: Nature-style blue gradient / Viridis\n")
-cat("- Diverging: Scientific red-white-blue (if applicable)\n")
+cat("Generated files (all without cell values):\n")
+cat("\npheatmap versions:\n")
+cat("- Figure_1_AUC_Heatmap_pheatmap.pdf\n")
+cat("\nComplexHeatmap versions:\n")
+cat("- Figure_2_AUC_Heatmap_ComplexHeatmap.pdf\n")
+cat("- Figure_2_AUC_Heatmap_ComplexHeatmap.tiff (600 DPI)\n")
+cat("- Figure_2_AUC_Heatmap_ComplexHeatmap.eps\n")
+cat("- Figure_2_AUC_Heatmap_ComplexHeatmap.png (300 DPI)\n")
+cat("- Figure_3_AUC_Heatmap_Compact_5to1.pdf (5:1 aspect ratio)\n")
+cat("\nFeatures:\n")
+cat("- Row labels (Sex-combined, Male, Female) on the left side\n")
+cat("- Optimized legend size and positioning\n")
+cat("- No cell value annotations for cleaner appearance\n")
+cat("- Professional color schemes: Nature blue / Viridis\n")
 cat("================================================================\n")
