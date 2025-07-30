@@ -40,7 +40,7 @@ dataset_levels <- c("all", "male", "female")
 snp_type_levels <- c("cis-SNP", "trans-SNP")
 
 # Color-blind-friendly palette (Okabe-Ito palette) - using 2 colors
-gpd_colors <- c("#275892", "#EB8928")  # Orange for cis-SNP, Sky blue for trans-SNP
+gpd_colors <- c("#EB8928", "#275892")  # Orange for cis-SNP, Sky blue for trans-SNP
 
 # Apply ordered factors
 gpd <- gpd %>%
