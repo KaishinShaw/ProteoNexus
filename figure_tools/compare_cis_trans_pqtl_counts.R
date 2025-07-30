@@ -1,49 +1,39 @@
 # =========================================================================
 # Stage 1: Setup - Loading Required Libraries
 # =========================================================================
-# 'readr' is for fast and friendly reading of rectangular data (like csv)
-# 'dplyr' is for powerful and intuitive data manipulation
-# 'ggplot2' is the primary library for creating graphics
-# 'ggsci' provides a collection of high-quality color palettes from scientific journals
-
-# If you haven't installed these packages, uncomment and run the following line:
-# install.packages(c("readr", "dplyr", "ggplot2", "ggsci"))
-
+# Core packages for data manipulation and visualization
 library(readr)
 library(dplyr)
 library(ggplot2)
-library(ggsci)
+library(scales)
+library(tidyr)  # Added explicitly for pivot_longer
 
+# Optional: For better font handling (uncomment if needed)
+# install.packages("showtext")
+# library(showtext)
+# showtext_auto()
 
 # =========================================================================
 # Stage 2: Data Loading
 # =========================================================================
-# Define the file paths. 
-# IMPORTANT: Ensure this path is correct for your system. R uses forward slashes '/'
-# even on Windows, which is generally safer than backslashes '\'.
-
+# Define file paths using forward slashes for cross-platform compatibility
 path_all    <- "C:/Users/shaok/Desktop/ProteoNexus_Citation/GRABBING/merged_sig_summ_all2_with_geneid1_filtered_annotated.csv"
 path_female <- "C:/Users/shaok/Desktop/ProteoNexus_Citation/GRABBING/merged_sig_summ_female2_with_geneid1_filtered_annotated.csv"
 path_male   <- "C:/Users/shaok/Desktop/ProteoNexus_Citation/GRABBING/merged_sig_summ_male2_with_geneid1_filtered_annotated.csv"
 
-# Read the CSV files into data frames
-# We use a tryCatch block to provide a helpful error message if a file is not found.
+# Load data with error handling
 tryCatch({
-    all_pqtl    <- read_csv(path_all)
-    female_pqtl <- read_csv(path_female)
-    male_pqtl   <- read_csv(path_male)
+    all_pqtl    <- read_csv(path_all, show_col_types = FALSE)
+    female_pqtl <- read_csv(path_female, show_col_types = FALSE)
+    male_pqtl   <- read_csv(path_male, show_col_types = FALSE)
 }, error = function(e) {
     stop("Error loading files. Please check if the file paths are correct and the files exist.\nOriginal error: ", e$message)
 })
 
-
 # =========================================================================
 # Stage 3: Data Processing and Transformation
 # =========================================================================
-# The goal is to create a single, "tidy" data frame suitable for ggplot2.
-# This data frame will have three columns: Cohort, pQTL_Type, and Count.
-
-# Calculate the sums of 'cis' and 'trans' columns for each dataset
+# Calculate cis and trans pQTL counts for each dataset
 summary_all <- all_pqtl %>% 
     summarise(cis = sum(cis, na.rm = TRUE), trans = sum(trans, na.rm = TRUE))
 
@@ -53,131 +43,209 @@ summary_female <- female_pqtl %>%
 summary_male <- male_pqtl %>% 
     summarise(cis = sum(cis, na.rm = TRUE), trans = sum(trans, na.rm = TRUE))
 
-# Combine the summaries into a single data frame
-# We add a 'Cohort' column to identify the source of the data
+# Combine and reshape data for plotting
 plot_data <- bind_rows(
-    "All"    = summary_all,
-    "Female" = summary_female,
-    "Male"   = summary_male,
-    .id = "Cohort"
+    "Sex-combined" = summary_all,
+    "Male"         = summary_male,
+    "Female"       = summary_female,
+    .id = "Dataset"
 ) %>%
-    # Now, we pivot the data from a "wide" format to a "long" format.
-    # This is the standard and most effective way to structure data for ggplot2.
-    tidyr::pivot_longer(
+    pivot_longer(
         cols = c(cis, trans),
         names_to = "pQTL_Type",
         values_to = "Count"
     )
 
-# To ensure the plot order is logical (All, Female, Male), we convert
-# the 'Cohort' column to a factor with a specified order.
-plot_data$Cohort <- factor(plot_data$Cohort, levels = c("All", "Female", "Male"))
-
-# We also make 'pQTL_Type' a factor to control its order and labels in the plot.
-plot_data$pQTL_Type <- factor(plot_data$pQTL_Type, levels = c("cis", "trans"), labels = c("Cis-pQTL", "Trans-pQTL"))
-
+# Convert to ordered factors
+plot_data$Dataset <- factor(plot_data$Dataset, 
+                            levels = c("Sex-combined", "Male", "Female"))
+plot_data$pQTL_Type <- factor(plot_data$pQTL_Type, 
+                              levels = c("cis", "trans"), 
+                              labels = c("cis-SNPs", "trans-SNPs"))
 
 # =========================================================================
-# Stage 4: Visualization with ggplot2
+# Stage 4: Create Publication-Quality Visualization
 # =========================================================================
-# Now we build the plot layer by layer for a publication-quality result.
+# Define publication-standard color palette
+custom_colors <- c("cis-SNPs" = "#cbbe7b", "trans-SNPs" = "#4a6d9f")
 
-pQTL_bar_chart <- ggplot(plot_data, aes(x = Cohort, y = Count, fill = pQTL_Type)) +
+# Create the bar chart
+pQTL_bar_chart <- ggplot(plot_data, aes(x = Dataset, y = Count, fill = pQTL_Type)) +
     
-    # Add the bar layer. 
-    # 'stat = "identity"' means the bar heights are the values from the 'Count' column.
-    # 'position = "dodge"' places the bars for cis and trans next to each other.
-    geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
+    # Bar layer with optimized spacing
+    geom_bar(stat = "identity", 
+             position = position_dodge(width = 0.8), 
+             width = 0.7,
+             color = "black",       # Add black outline
+             linewidth = 0.3) +     # Thin outline for definition
     
-    # Add text labels on top of each bar for clarity.
-    # 'position_dodge' ensures the labels are centered above their respective bars.
-    # 'vjust' adjusts the vertical position to be slightly above the bar.
-    geom_text(aes(label = Count), 
+    # Add value labels above bars
+    geom_text(aes(label = format(Count, big.mark = ",")), 
               position = position_dodge(width = 0.8), 
               vjust = -0.5, 
               size = 3.5,
-              family = "sans") + # Using a standard sans-serif font
+              fontface = "plain") + # Remove Arial font specification
     
-    # Apply a professional color palette.
-    # 'scale_fill_npg()' is from the 'ggsci' package and emulates the Nature Publishing Group palette.
-    # Other excellent choices: scale_fill_brewer(palette = "Paired"), scale_fill_lancet()
-    scale_fill_npg() +
+    # Apply custom colors
+    scale_fill_manual(values = custom_colors,
+                      name = "pQTL Type") +
     
-    # Set the labels for the axes and the legend.
+    # Axis labels
     labs(
-        title = "Number of Significant pQTLs by Cohort and Type",
-        subtitle = "Comparison across combined, female, and male cohorts",
-        x = "Cohort",
+        x = "Dataset",
         y = "Number of Significant pQTLs",
-        fill = "pQTL Type" # This sets the legend title
+        fill = "pQTL Type"
     ) +
     
-    # Apply a clean, classic theme suitable for scientific papers.
-    # 'base_size' sets a baseline font size for all text elements.
-    theme_classic(base_size = 14) +
+    # Y-axis formatting
+    scale_y_continuous(
+        expand = expansion(mult = c(0, 0.1)),  # No expansion at bottom, 10% at top
+        labels = function(x) format(x, big.mark = ",", scientific = FALSE),
+        breaks = pretty_breaks(n = 5)
+    ) +
     
-    # Further theme customizations for a polished look.
+    # Apply minimalist theme
+    theme_classic(base_size = 12) +
+    
+    # Detailed theme customization for publication standards
     theme(
-        # Axis text and titles
-        axis.text.x = element_text(size = 12, color = "black", angle = 0, hjust = 0.5),
-        axis.text.y = element_text(size = 12, color = "black"),
-        axis.title.x = element_text(size = 14, face = "bold", margin = margin(t = 10)),
-        axis.title.y = element_text(size = 14, face = "bold", margin = margin(r = 10)),
+        # Text elements - using default fonts to avoid errors
+        text = element_text(color = "black"),
         
-        # Axis lines
-        axis.line = element_line(colour = "black", linewidth = 0.6),
+        # Axis text
+        axis.text.x = element_text(size = 11, color = "black", margin = margin(t = 5)),
+        axis.text.y = element_text(size = 11, color = "black", margin = margin(r = 5)),
         
-        # Legend customization
-        legend.position = "top",
-        legend.title = element_text(size = 12, face = "bold"),
-        legend.text = element_text(size = 11),
+        # Axis titles
+        axis.title.x = element_text(size = 12, face = "bold", margin = margin(t = 15)),
+        axis.title.y = element_text(size = 12, face = "bold", margin = margin(r = 15)),
         
-        # Plot title and subtitle
-        plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
-        plot.subtitle = element_text(size = 12, hjust = 0.5, margin = margin(b = 15)),
+        # Axis appearance
+        axis.line = element_line(colour = "black", linewidth = 0.5),
+        axis.ticks = element_line(colour = "black", linewidth = 0.5),
+        axis.ticks.length = unit(0.15, "cm"),
         
-        # Remove grid lines for a cleaner look
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank()
-    ) +
-    
-    # Expand the y-axis slightly to ensure the text labels on top of the bars fit well.
-    scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
+        # Legend at bottom with improved spacing
+        legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title = element_text(size = 11, face = "bold", margin = margin(b = 5)),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(0.6, "cm"),
+        legend.key.width = unit(1.2, "cm"),
+        legend.spacing.x = unit(0.3, "cm"),
+        legend.margin = margin(t = 15),
+        legend.box.margin = margin(0, 0, 0, 0),
+        
+        # Clean background
+        panel.background = element_rect(fill = "white", colour = NA),
+        panel.grid = element_blank(),
+        
+        # Plot margins
+        plot.margin = margin(t = 10, r = 10, b = 10, l = 10, unit = "pt")
+    )
 
-# Display the plot in the RStudio Plots pane
+# Display the plot
 print(pQTL_bar_chart)
 
+# =========================================================================
+# Stage 5: Export for Scientific Publication
+# =========================================================================
+# Create output directory if it doesn't exist
+output_dir <- "publication_figures"
+if (!dir.exists(output_dir)) {
+    dir.create(output_dir)
+}
+
+# Function to save plots with consistent settings
+save_publication_plot <- function(plot, filename, width, height, dpi = 300) {
+    ggsave(
+        filename = file.path(output_dir, filename),
+        plot = plot,
+        width = width,
+        height = height,
+        units = "in",
+        dpi = dpi
+    )
+    cat("Saved:", file.path(output_dir, filename), "\n")
+}
+
+# Save in multiple formats for different journal requirements
+
+# 1. PDF format (vector graphics, preferred for most journals)
+save_publication_plot(pQTL_bar_chart, 
+                      "pQTL_counts_by_dataset.pdf", 
+                      width = 7, 
+                      height = 5)
+
+# 2. High-resolution PNG (300 DPI)
+save_publication_plot(pQTL_bar_chart, 
+                      "pQTL_counts_by_dataset_300dpi.png", 
+                      width = 7, 
+                      height = 5, 
+                      dpi = 300)
+
+# 3. Extra high-resolution PNG (600 DPI for some journals)
+save_publication_plot(pQTL_bar_chart, 
+                      "pQTL_counts_by_dataset_600dpi.png", 
+                      width = 7, 
+                      height = 5, 
+                      dpi = 600)
+
+# 4. TIFF format with LZW compression
+ggsave(
+    filename = file.path(output_dir, "pQTL_counts_by_dataset.tiff"),
+    plot = pQTL_bar_chart,
+    width = 7,
+    height = 5,
+    units = "in",
+    dpi = 300,
+    compression = "lzw"
+)
+
+# 5. Single-column width (Nature/Science format: 89mm ≈ 3.5 inches)
+save_publication_plot(pQTL_bar_chart + 
+                          theme(legend.direction = "vertical",
+                                legend.position = "right",
+                                legend.box.spacing = unit(0, "pt")), 
+                      "pQTL_counts_single_column.pdf", 
+                      width = 3.5, 
+                      height = 4)
+
+# 6. Double-column width (standard: 183mm ≈ 7.2 inches)
+save_publication_plot(pQTL_bar_chart, 
+                      "pQTL_counts_double_column.pdf", 
+                      width = 7.2, 
+                      height = 5)
+
+# 7. EPS format (some journals still require this)
+ggsave(
+    filename = file.path(output_dir, "pQTL_counts_by_dataset.eps"),
+    plot = pQTL_bar_chart,
+    width = 7,
+    height = 5,
+    units = "in",
+    device = "eps"
+)
 
 # =========================================================================
-# Stage 5: Exporting the Plot for Publication
+# Stage 6: Generate Summary Statistics Table
 # =========================================================================
-# Use ggsave() to save the plot to a file.
-# PDF is a vector format, ideal for publications as it can be scaled without losing quality.
-# PNG or TIFF are high-quality raster formats.
+# Create a summary table for manuscript
+summary_table <- plot_data %>%
+    pivot_wider(names_from = pQTL_Type, values_from = Count) %>%
+    mutate(
+        Total = `cis-SNPs` + `trans-SNPs`,
+        `cis-SNPs (%)` = round(`cis-SNPs` / Total * 100, 1),
+        `trans-SNPs (%)` = round(`trans-SNPs` / Total * 100, 1)
+    ) %>%
+    select(Dataset, `cis-SNPs`, `trans-SNPs`, Total, 
+           `cis-SNPs (%)`, `trans-SNPs (%)`)
 
-# Saving as a PDF
-ggsave(
-    filename = "pQTL_counts_by_cohort.pdf",
-    plot = pQTL_bar_chart,
-    width = 8,  # inches
-    height = 6, # inches
-    device = "pdf"
-)
+# Print summary table
+cat("\n=== pQTL Summary Statistics ===\n")
+print(summary_table, n = Inf)
 
-# Saving as a high-resolution PNG (e.g., 300 DPI)
-ggsave(
-    filename = "pQTL_counts_by_cohort_300dpi.png",
-    plot = pQTL_bar_chart,
-    width = 8,
-    height = 6,
-    dpi = 300
-)
+# Save summary table as CSV
+write_csv(summary_table, file.path(output_dir, "pQTL_summary_statistics.csv"))
 
-# You can also save in TIFF format, often requested by journals
-ggsave(
-    filename = "pQTL_counts_by_cohort.tiff",
-    plot = pQTL_bar_chart,
-    width = 8,
-    height = 6,
-    dpi = 300
-)
+cat("\n=== All files have been saved to:", output_dir, "===\n")
