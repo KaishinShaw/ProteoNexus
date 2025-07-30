@@ -101,13 +101,13 @@ p <- ggplot(dist_combined,
     geom_bar(stat = "identity", position = position_dodge(width = 0.9), 
              width = 0.8, alpha = 0.9) +
     facet_wrap(~ type, scales = "free_y", ncol = 1,
-               labeller = labeller(type = c(cis = "Cis-acting pQTLs", 
-                                            trans = "Trans-acting pQTLs"))) +
+               labeller = labeller(type = c(cis = "cis-SNPs", 
+                                            trans = "trans-SNPs"))) +
     scale_fill_manual(values = color_palette, name = "Dataset") +
     scale_y_continuous(expand = expansion(mult = c(0, 0.1)),
                        labels = comma) +
     labs(
-        x = "Number of associations per protein",
+        x = "Number of pQTLs",
         y = "Number of proteins"
     ) +
     theme_bw(base_size = 12) +
@@ -132,7 +132,7 @@ p <- ggplot(dist_combined,
         legend.title = element_text(size = 11, face = "bold"),
         legend.text = element_text(size = 10),
         legend.key.size = unit(0.8, "cm"),
-        legend.box.background = element_rect(color = "gray80", size = 0.5),
+        # legend.box.background = element_rect(color = "gray80", size = 0.5),
         
         # Overall appearance
         plot.margin = margin(10, 10, 10, 10)
