@@ -1,6 +1,6 @@
 # ============================================================
 # R Script for Publication‐Quality pQTL Counts Visualization
-# Author: Hydraulik
+# Author: Hydraulik (modified)
 # Date: 2025‐07‐30
 # Description: 
 #   1. Load significant pQTL datasets (combined, male, female)
@@ -8,19 +8,18 @@
 #   3. Create an SCI‐standard bar chart with custom colours
 #   4. Export figures in multiple formats
 #   5. Generate and save a summary statistics table
+# Modifications:
+#   • Rename x-axis label from "Cohort" to "Dataset"
+#   • Rename "Combined" group to "Sex-combined"
+#   • Retain SCI-approved colours: cis = "#cbbe7b", trans = "#4a6d9f"
 # ============================================================
 
 # 1. Load Required Libraries ------------------------------------------------
-library(readr)    # Fast CSV import
-library(dplyr)    # Data manipulation
-library(tidyr)    # Data reshaping
-library(ggplot2)  # Plotting
-library(scales)   # Axis formatting
-
-# Optional: enable custom fonts
-# install.packages("showtext")
-# library(showtext)
-# showtext_auto()
+library(readr)      # Fast CSV import
+library(dplyr)      # Data manipulation
+library(tidyr)      # Data reshaping
+library(ggplot2)    # Plotting
+library(scales)     # Axis formatting
 
 # 2. Define File Paths & Import Data ----------------------------------------
 base_dir    <- "C:/Users/shaok/Desktop/ProteoNexus_Citation/GRABBING"
@@ -38,35 +37,35 @@ tryCatch({
 })
 
 # 3. Summarise cis/trans Counts ---------------------------------------------
-summ_all   <- df_all    %>% summarise(cis = sum(cis, na.rm = TRUE),
-                                      trans = sum(trans, na.rm = TRUE))
-summ_male  <- df_male   %>% summarise(cis = sum(cis, na.rm = TRUE),
-                                      trans = sum(trans, na.rm = TRUE))
-summ_female<- df_female %>% summarise(cis = sum(cis, na.rm = TRUE),
-                                      trans = sum(trans, na.rm = TRUE))
+summ_all    <- df_all    %>% summarise(cis = sum(cis, na.rm = TRUE),
+                                       trans = sum(trans, na.rm = TRUE))
+summ_male   <- df_male   %>% summarise(cis = sum(cis, na.rm = TRUE),
+                                       trans = sum(trans, na.rm = TRUE))
+summ_female <- df_female %>% summarise(cis = sum(cis, na.rm = TRUE),
+                                       trans = sum(trans, na.rm = TRUE))
 
-# Combine into one data frame and reshape for plotting
+# 4. Combine and Reshape for Plotting ---------------------------------------
 plot_df <- bind_rows(
-    "Combined" = summ_all,
-    "Male"     = summ_male,
-    "Female"   = summ_female,
-    .id = "Cohort"
+    "Sex-combined" = summ_all,
+    "Male"         = summ_male,
+    "Female"       = summ_female,
+    .id = "Dataset"
 ) %>%
     pivot_longer(cols      = c(cis, trans),
                  names_to  = "Type",
                  values_to = "Count") %>%
     mutate(
-        Cohort = factor(Cohort, levels = c("Combined", "Male", "Female")),
-        Type   = factor(Type,   levels = c("cis", "trans"),
-                        labels = c("cis‐SNPs", "trans‐SNPs"))
+        Dataset = factor(Dataset, levels = c("Sex-combined", "Male", "Female")),
+        Type    = factor(Type, levels = c("cis", "trans"),
+                         labels = c("cis-SNPs", "trans-SNPs"))
     )
 
-# 4. Create Publication‐Quality Bar Chart -----------------------------------
-# Define the SCI‐approved colour palette
-custom_cols <- c("cis‐SNPs"   = "#cbbe7b",
-                 "trans‐SNPs" = "#4a6d9f")
+# 5. Create Publication‐Quality Bar Chart -----------------------------------
+# Define SCI-approved colour palette
+custom_cols <- c("cis-SNPs"   = "#cbbe7b",
+                 "trans-SNPs" = "#4a6d9f")
 
-p <- ggplot(plot_df, aes(x = Cohort, y = Count, fill = Type)) +
+p <- ggplot(plot_df, aes(x = Dataset, y = Count, fill = Type)) +
     geom_bar(stat     = "identity",
              position = position_dodge(width = 0.7),
              width    = 0.6,
@@ -84,13 +83,11 @@ p <- ggplot(plot_df, aes(x = Cohort, y = Count, fill = Type)) +
         expand = expansion(mult = c(0, 0.05))
     ) +
     labs(
-        # title = "cis vs. trans pQTL Counts by Cohort",
-        x     = "Cohort",
-        y     = "Number of Significant pQTLs"
+        x = "Dataset",
+        y = "Number of Significant pQTLs"
     ) +
     theme_classic(base_size = 12) +
     theme(
-        plot.title       = element_text(face = "bold", size = 14, hjust = 0.5),
         axis.title       = element_text(face = "bold"),
         axis.text        = element_text(size = 11),
         axis.ticks       = element_line(colour = "black"),
@@ -107,7 +104,7 @@ p <- ggplot(plot_df, aes(x = Cohort, y = Count, fill = Type)) +
 # Display the plot
 print(p)
 
-# 5. Export Figures for Journal Submission ----------------------------------
+# 6. Export Figures for Journal Submission ----------------------------------
 output_dir <- "publication_figures"
 if (!dir.exists(output_dir)) dir.create(output_dir)
 
@@ -124,27 +121,27 @@ save_plot <- function(plot, filename, width, height, dpi = 300, device = NULL, .
     )
 }
 
-# Vector, PNG, TIFF, EPS—covering common journal requirements
-save_plot(p, "pQTL_counts_combined.pdf",        width = 7,   height = 5)
-save_plot(p, "pQTL_counts_300dpi.png",          width = 7,   height = 5,   dpi = 300)
-save_plot(p, "pQTL_counts_600dpi.png",          width = 7,   height = 5,   dpi = 600)
-save_plot(p, "pQTL_counts.tiff",                width = 7,   height = 5,   dpi = 300, device = "tiff", compression = "lzw")
+# Export in multiple formats to meet journal requirements
+save_plot(p, "pQTL_counts_sex_combined.pdf",      width = 7,   height = 5)
+save_plot(p, "pQTL_counts_300dpi.png",            width = 7,   height = 5, dpi = 300)
+save_plot(p, "pQTL_counts_600dpi.png",            width = 7,   height = 5, dpi = 600)
+save_plot(p, "pQTL_counts.tiff",                  width = 7,   height = 5, dpi = 300, device = "tiff", compression = "lzw")
 save_plot(p + theme(legend.direction = "vertical", legend.position = "right"),
-          "pQTL_counts_single_column.pdf",     width = 3.5, height = 4)
-save_plot(p, "pQTL_counts_double_column.pdf",   width = 7.2, height = 5)
-save_plot(p, "pQTL_counts.eps",                 width = 7,   height = 5,   device = "eps")
+          "pQTL_counts_single_column.pdf",       width = 3.5, height = 4)
+save_plot(p, "pQTL_counts_double_column.pdf",     width = 7.2, height = 5)
+save_plot(p, "pQTL_counts.eps",                   width = 7,   height = 5, device = "eps")
 
-# 6. Generate & Save Summary Statistics Table -------------------------------
+# 7. Generate & Save Summary Statistics Table -------------------------------
 summary_table <- plot_df %>%
     pivot_wider(names_from = Type, values_from = Count) %>%
     mutate(
-        Total            = `cis‐SNPs` + `trans‐SNPs`,
-        `cis‐SNPs (%)`   = round(`cis‐SNPs`   / Total * 100, 1),
-        `trans‐SNPs (%)` = round(`trans‐SNPs` / Total * 100, 1)
+        Total            = `cis-SNPs` + `trans-SNPs`,
+        `cis-SNPs (%)`   = round(`cis-SNPs`   / Total * 100, 1),
+        `trans-SNPs (%)` = round(`trans-SNPs` / Total * 100, 1)
     ) %>%
-    select(Cohort, `cis‐SNPs`, `trans‐SNPs`, Total, `cis‐SNPs (%)`, `trans‐SNPs (%)`)
+    select(Dataset, `cis-SNPs`, `trans-SNPs`, Total, `cis-SNPs (%)`, `trans-SNPs (%)`)
 
-cat("\n=== pQTL Summary Statistics ===\n")
+cat("\n=== pQTL Summary Statistics by Dataset ===\n")
 print(summary_table, n = Inf)
 
 # Export summary as CSV
