@@ -90,9 +90,9 @@ dist_combined <- bind_rows(dist_all, dist_female, dist_male) %>%
 # 7. CREATE PUBLICATION-READY BAR PLOT
 # Define professional color palette
 color_palette <- c(
-    "Sex-combined" = "#450153",  # Purple
-    "Male"         = "#20908e",  # Teal
-    "Female"       = "#fce824"   # Yellow
+    "Sex-combined" = "#F29B76",  # Purple
+    "Male"         = "#5F8FCA",  # Teal
+    "Female"       = "#9EB4DC"   # Yellow
 )
 
 # Create the plot
