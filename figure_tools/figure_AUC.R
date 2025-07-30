@@ -335,6 +335,32 @@ p3 <- ggplot(data_long, aes(x = Model, y = Group, fill = AUC)) +
     ) +
     coord_fixed(ratio = 5)
 
+p3_aspect <- ggplot(data_long, aes(x = Model, y = Group, fill = AUC)) +
+    geom_tile(color = "white", size = 0.5) +
+    scale_fill_gradientn(
+        colors = color_palette,
+        limits = range(breaks_seq),
+        breaks = legend_breaks,
+        labels = function(x) sprintf("%.2f", x),
+        na.value = "#E5E5E5",
+        name = "AUC"
+    ) +
+    scale_x_discrete(expand = c(0, 0)) +
+    scale_y_discrete(expand = c(0, 0)) +
+    theme_minimal(base_size = 10, base_family = font_family) +
+    theme(
+        panel.grid = element_blank(),
+        panel.background = element_rect(fill = "white", color = NA),
+        axis.text.x = element_blank(),
+        axis.text.y = element_text(color = "black", hjust = 1),
+        axis.title = element_blank(),
+        axis.ticks = element_blank(),
+        legend.position = "right",
+        legend.title = element_text(face = "bold"),
+        # legend.background = element_rect(color = "black", size = 0.5),
+        aspect.ratio = 1/8
+    )
+
 # Export compact version
 ggsave(
     filename = "Figure_3_AUC_Heatmap_Compact_5to1.pdf",
