@@ -1,5 +1,5 @@
 # =============================================================================
-# Title:    Plot protein cis/trans count distributions for all, female, and male
+# Title:    Bar plot of protein cis/trans pQTL count distributions by intervals
 # Author:   Hydraulik
 # Date:     2025-07-30
 # =============================================================================
@@ -7,13 +7,15 @@
 # 1. LOAD REQUIRED LIBRARIES
 library(tidyverse)    # for data import, manipulation, and plotting
 library(tidyr)        # for complete()
+library(scales)       # for formatting
+library(RColorBrewer) # for color palettes
 
 # 2. DEFINE FILE PATHS
 base_dir <- "C:/Users/shaok/Desktop/ProteoNexus_Citation/GRABBING"
 files <- list(
-  all    = file.path(base_dir, "merged_sig_summ_all2_with_geneid1_filtered_annotated.csv"),
-  female = file.path(base_dir, "merged_sig_summ_female2_with_geneid1_filtered_annotated.csv"),
-  male   = file.path(base_dir, "merged_sig_summ_male2_with_geneid1_filtered_annotated.csv")
+    all    = file.path(base_dir, "merged_sig_summ_all2_with_geneid1_filtered_annotated.csv"),
+    female = file.path(base_dir, "merged_sig_summ_female2_with_geneid1_filtered_annotated.csv"),
+    male   = file.path(base_dir, "merged_sig_summ_male2_with_geneid1_filtered_annotated.csv")
 )
 
 # 3. READ DATA
@@ -21,72 +23,163 @@ all_pqtl    <- read_csv(files$all)
 female_pqtl <- read_csv(files$female)
 male_pqtl   <- read_csv(files$male)
 
-# 4. FUNCTION TO COMPUTE DISTRIBUTION OF CIS/TRANS COUNTS
-compute_count_distribution <- function(df, label) {
-  df %>%
-    group_by(protein_name) %>%
-    summarise(
-      cis_count   = sum(cis,   na.rm = TRUE),
-      trans_count = sum(trans, na.rm = TRUE),
-      .groups = "drop"
-    ) %>%
-    pivot_longer(
-      cols      = c(cis_count, trans_count),
-      names_to  = "type",
-      values_to = "count"
-    ) %>%
-    filter(count > 0) %>%
-    count(type, count, name = "n_proteins") %>%
-    mutate(dataset = label)
+# 4. FUNCTION TO COMPUTE BINNED DISTRIBUTION OF CIS/TRANS COUNTS
+compute_binned_distribution <- function(df, label) {
+    # Calculate counts per protein
+    protein_counts <- df %>%
+        group_by(protein_name) %>%
+        summarise(
+            cis_count   = sum(cis,   na.rm = TRUE),
+            trans_count = sum(trans, na.rm = TRUE),
+            .groups = "drop"
+        )
+    
+    # Create bins for counts
+    create_bins <- function(counts, type_label) {
+        data.frame(count = counts) %>%
+            filter(count > 0) %>%
+            mutate(
+                bin = case_when(
+                    count <= 10  ~ "1-10",
+                    count <= 20  ~ "11-20",
+                    count <= 30  ~ "21-30",
+                    count <= 40  ~ "31-40",
+                    count <= 50  ~ "41-50",
+                    count <= 60  ~ "51-60",
+                    count <= 70  ~ "61-70",
+                    count <= 80  ~ "71-80",
+                    count <= 90  ~ "81-90",
+                    count <= 100 ~ "91-100",
+                    TRUE         ~ ">100"
+                ),
+                bin = factor(bin, levels = c("1-10", "11-20", "21-30", "31-40", "41-50",
+                                             "51-60", "61-70", "71-80", "81-90", "91-100", ">100"))
+            ) %>%
+            count(bin, name = "n_proteins") %>%
+            mutate(
+                type = type_label,
+                dataset = label
+            )
+    }
+    
+    # Apply binning to both cis and trans counts
+    cis_bins   <- create_bins(protein_counts$cis_count,   "cis")
+    trans_bins <- create_bins(protein_counts$trans_count, "trans")
+    
+    # Combine results
+    bind_rows(cis_bins, trans_bins)
 }
 
-# 5. COMPUTE DISTRIBUTIONS
-dist_all    <- compute_count_distribution(all_pqtl,    "all")
-dist_female <- compute_count_distribution(female_pqtl, "female")
-dist_male   <- compute_count_distribution(male_pqtl,   "male")
+# 5. COMPUTE BINNED DISTRIBUTIONS
+dist_all    <- compute_binned_distribution(all_pqtl,    "All")
+dist_female <- compute_binned_distribution(female_pqtl, "Female")
+dist_male   <- compute_binned_distribution(male_pqtl,   "Male")
 
-# 6. COMBINE AND COMPLETE BIN COUNTS
+# 6. COMBINE ALL DISTRIBUTIONS
 dist_combined <- bind_rows(dist_all, dist_female, dist_male) %>%
-  group_by(dataset, type) %>%
-  complete(
-    count = full_seq(count, 1),
-    fill  = list(n_proteins = 0)
-  ) %>%
-  ungroup()
+    # Ensure all combinations exist (fill missing with 0)
+    complete(
+        dataset = unique(dataset),
+        type    = unique(type),
+        bin     = unique(bin),
+        fill    = list(n_proteins = 0)
+    )
 
-# 7. PLOT SIX SCATTER SERIES USING ggplot2
+# 7. CREATE PUBLICATION-READY BAR PLOT
+# Define professional color palette
+color_palette <- c(
+    "All"    = "#1B9E77",  # Teal
+    "Female" = "#D95F02",  # Orange
+    "Male"   = "#7570B3"   # Purple
+)
+
+# Create the plot
 p <- ggplot(dist_combined,
-            aes(
-              x     = count,
-              y     = n_proteins,
-              color = dataset,
-              shape = type
-            )
-           ) +
-  geom_point(size = 3, alpha = 0.8) +
-  scale_color_brewer(palette = "Dark2", name = "Dataset") +
-  scale_shape_manual(
-    values = c(cis_count   = 16,  # solid circle for cis
-               trans_count = 17), # triangle for trans
-    labels = c(cis_count   = "cis",
-               trans_count = "trans"),
-    name   = "Association Type"
-  ) +
-  scale_x_continuous(breaks = scales::pretty_breaks()) +
-  labs(
-    title    = "Scatter Plot of Protein-level cis/trans pQTL Count Distributions",
-    subtitle = "Number of proteins with exactly 1, 2, 3, … cis or trans associations",
-    x        = "Number of cis/trans associations per protein",
-    y        = "Number of proteins",
-    caption  = "Data: merged_sig_summ_*_with_geneid1_filtered_annotated.csv"
-  ) +
-  theme_minimal(base_size = 14) +
-  theme(
-    legend.position = "bottom",
-    legend.box      = "vertical",
-    plot.title      = element_text(face = "bold", size = 16),
-    plot.subtitle   = element_text(size = 12)
-  )
+            aes(x = bin, y = n_proteins, fill = dataset)) +
+    geom_bar(stat = "identity", position = position_dodge(width = 0.9), 
+             width = 0.8, alpha = 0.9) +
+    facet_wrap(~ type, scales = "free_y", ncol = 1,
+               labeller = labeller(type = c(cis = "Cis-acting pQTLs", 
+                                            trans = "Trans-acting pQTLs"))) +
+    scale_fill_manual(values = color_palette, name = "Dataset") +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.1)),
+                       labels = comma) +
+    labs(
+        title = "Distribution of Protein-level pQTL Associations",
+        subtitle = "Number of proteins stratified by cis/trans association count intervals",
+        x = "Number of associations per protein",
+        y = "Number of proteins",
+        caption = "Data source: merged_sig_summ_*_with_geneid1_filtered_annotated.csv"
+    ) +
+    theme_bw(base_size = 12) +
+    theme(
+        # Title and text formatting
+        plot.title = element_text(face = "bold", size = 14, hjust = 0),
+        plot.subtitle = element_text(size = 12, hjust = 0, color = "gray30"),
+        plot.caption = element_text(size = 9, hjust = 1, color = "gray50"),
+        
+        # Axis formatting
+        axis.title = element_text(size = 11, face = "bold"),
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.ticks = element_line(size = 0.5),
+        
+        # Panel and grid formatting
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_rect(size = 1),
+        
+        # Facet formatting
+        strip.background = element_rect(fill = "gray95", color = "gray20", size = 1),
+        strip.text = element_text(size = 11, face = "bold"),
+        
+        # Legend formatting
+        legend.position = "bottom",
+        legend.title = element_text(size = 11, face = "bold"),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(0.8, "cm"),
+        legend.box.background = element_rect(color = "gray80", size = 0.5),
+        
+        # Overall appearance
+        plot.margin = margin(10, 10, 10, 10)
+    )
 
-# 8. RENDER PLOT
+# 8. SAVE PLOT IN HIGH RESOLUTION
+ggsave(
+    filename = "protein_pqtl_distribution_barplot.pdf",
+    plot = p,
+    width = 8,
+    height = 10,
+    dpi = 300,
+    device = "pdf"
+)
+
+# Also save as PNG for quick viewing
+ggsave(
+    filename = "protein_pqtl_distribution_barplot.png",
+    plot = p,
+    width = 8,
+    height = 10,
+    dpi = 300,
+    device = "png"
+)
+
+# 9. DISPLAY PLOT
 print(p)
+
+# 10. GENERATE SUMMARY STATISTICS TABLE
+summary_stats <- dist_combined %>%
+    group_by(dataset, type) %>%
+    summarise(
+        total_proteins = sum(n_proteins),
+        median_bin = bin[which.max(n_proteins)],
+        .groups = "drop"
+    ) %>%
+    pivot_wider(
+        names_from = type,
+        values_from = c(total_proteins, median_bin),
+        names_glue = "{type}_{.value}"
+    )
+
+print("Summary Statistics:")
+print(summary_stats)
