@@ -347,7 +347,7 @@ p3_aspect <- ggplot(data_long, aes(x = Model, y = Group, fill = AUC)) +
     ) +
     scale_x_discrete(expand = c(0, 0)) +
     scale_y_discrete(expand = c(0, 0)) +
-    theme_minimal(base_size = 10, base_family = font_family) +
+    theme_minimal(base_size = 20, base_family = font_family) +
     theme(
         panel.grid = element_blank(),
         panel.background = element_rect(fill = "white", color = NA),
