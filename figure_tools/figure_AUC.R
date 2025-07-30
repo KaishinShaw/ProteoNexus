@@ -378,3 +378,16 @@ cat("- Optimized legend size and positioning\n")
 cat("- No cell value annotations for cleaner appearance\n")
 cat("- Professional color schemes: Nature blue / Viridis\n")
 cat("================================================================\n")
+
+library(ComplexHeatmap)
+library(ggplotify)
+library(cowplot)
+library(grid)
+library(gtable)
+library(ggplot2)
+library(ggplotify)
+
+p_heatmap <- as.ggplot(~ draw(ht_compact,
+                              heatmap_legend_side = "right",
+                              padding = unit(c(2,5,2,2), "mm"),
+                              merge_legend = TRUE))
