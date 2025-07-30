@@ -71,12 +71,14 @@ compute_binned_distribution <- function(df, label) {
 }
 
 # 5. COMPUTE BINNED DISTRIBUTIONS
-dist_all    <- compute_binned_distribution(all_pqtl,    "All")
+dist_all    <- compute_binned_distribution(all_pqtl,    "Sex-combined")
 dist_female <- compute_binned_distribution(female_pqtl, "Female")
 dist_male   <- compute_binned_distribution(male_pqtl,   "Male")
 
 # 6. COMBINE ALL DISTRIBUTIONS
 dist_combined <- bind_rows(dist_all, dist_female, dist_male) %>%
+    # Set factor levels for desired order
+    mutate(dataset = factor(dataset, levels = c("Sex-combined", "Male", "Female"))) %>%
     # Ensure all combinations exist (fill missing with 0)
     complete(
         dataset = unique(dataset),
@@ -88,9 +90,9 @@ dist_combined <- bind_rows(dist_all, dist_female, dist_male) %>%
 # 7. CREATE PUBLICATION-READY BAR PLOT
 # Define professional color palette
 color_palette <- c(
-    "All"    = "#1B9E77",  # Teal
-    "Female" = "#D95F02",  # Orange
-    "Male"   = "#7570B3"   # Purple
+    "Sex-combined" = "#450153",  # Purple
+    "Male"         = "#20908e",  # Teal
+    "Female"       = "#fce824"   # Yellow
 )
 
 # Create the plot
@@ -105,19 +107,11 @@ p <- ggplot(dist_combined,
     scale_y_continuous(expand = expansion(mult = c(0, 0.1)),
                        labels = comma) +
     labs(
-        title = "Distribution of Protein-level pQTL Associations",
-        subtitle = "Number of proteins stratified by cis/trans association count intervals",
         x = "Number of associations per protein",
-        y = "Number of proteins",
-        caption = "Data source: merged_sig_summ_*_with_geneid1_filtered_annotated.csv"
+        y = "Number of proteins"
     ) +
     theme_bw(base_size = 12) +
     theme(
-        # Title and text formatting
-        plot.title = element_text(face = "bold", size = 14, hjust = 0),
-        plot.subtitle = element_text(size = 12, hjust = 0, color = "gray30"),
-        plot.caption = element_text(size = 9, hjust = 1, color = "gray50"),
-        
         # Axis formatting
         axis.title = element_text(size = 11, face = "bold"),
         axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
