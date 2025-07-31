@@ -71,7 +71,7 @@ create_publication_plot <- function(df, category_colors) {
         scale_x_discrete(labels = c("Sex-combined", "Male", "Female")) +
         scale_fill_manual(values = category_colors) +
         labs(
-            x    = "Dataset",
+            x    = "Datasets",
             y    = "Proportion of pathways (%)",
             fill = "Category"  # Added legend title
         ) +
