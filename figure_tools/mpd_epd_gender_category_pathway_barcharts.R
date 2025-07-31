@@ -72,7 +72,7 @@ create_publication_plot <- function(df, category_colors) {
         scale_fill_manual(values = category_colors) +
         labs(
             x    = "Dataset",
-            y    = "Proportion of pathway (%)",
+            y    = "Proportion of pathways (%)",
             fill = "Category"  # Added legend title
         ) +
         theme_bw(base_size = 12) +
