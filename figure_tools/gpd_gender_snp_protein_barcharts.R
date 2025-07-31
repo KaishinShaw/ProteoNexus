@@ -82,9 +82,9 @@ create_publication_plot <- function(df, snp_colors) {
         scale_x_discrete(labels = c("Sex-combined", "Male", "Female")) +
         scale_fill_manual(values = snp_colors) +
         labs(
-            x = "Dataset",
-            y = "Proportion of protein (%)",
-            fill = "SNP Type"  # Legend title
+            x = "Datasets",
+            y = "Proportion of proteins (%)",
+            fill = "pQTL Type"  # Legend title
         ) +
         theme_bw(base_size = 12) +
         theme(
