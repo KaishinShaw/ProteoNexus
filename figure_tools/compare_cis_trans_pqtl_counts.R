@@ -12,6 +12,7 @@
 #   • Rename x-axis label from "Cohort" to "Dataset"
 #   • Rename "Combined" group to "Sex-combined"
 #   • Retain SCI-approved colours: cis = "#cbbe7b", trans = "#4a6d9f"
+#   • Add complete border frame around the plot
 # ============================================================
 
 # 1. Load Required Libraries ------------------------------------------------
@@ -86,10 +87,10 @@ p <- ggplot(plot_df, aes(x = Dataset, y = Count, fill = Type)) +
         x = "Dataset",
         y = "Number of significant pQTLs"
     ) +
-    theme_classic(base_size = 12) +
+    theme_classic(base_size = 16) +
     theme(
         axis.title       = element_text(face = "bold"),
-        axis.text        = element_text(size = 11),
+        axis.text        = element_text(size = 14),
         axis.ticks       = element_line(colour = "black"),
         axis.line        = element_line(colour = "black"),
         legend.position  = "bottom",
@@ -97,6 +98,7 @@ p <- ggplot(plot_df, aes(x = Dataset, y = Count, fill = Type)) +
         legend.text      = element_text(size = 10),
         legend.key.size  = unit(0.6, "cm"),
         panel.background = element_rect(fill = "white", colour = NA),
+        panel.border     = element_rect(colour = "black", fill = NA, size = 0.8),  # 添加完整外框
         panel.grid       = element_blank(),
         plot.margin      = margin(10, 10, 10, 10)
     )
