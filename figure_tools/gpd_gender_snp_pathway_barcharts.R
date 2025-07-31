@@ -71,7 +71,7 @@ create_publication_plot <- function(df, snp_colors) {
         scale_fill_manual(values = snp_colors) +
         labs(
             x = "Datasets",
-            y = "Proportion of SNPs (%)",
+            y = "Proportion of pathways (%)",
             fill = "pQTL Type"  # Legend title
         ) +
         theme_bw(base_size = 12) +
