@@ -84,7 +84,7 @@ p <- ggplot(plot_df, aes(x = Dataset, y = Count, fill = Type)) +
     ) +
     labs(
         x = "Dataset",
-        y = "Number of Significant pQTLs"
+        y = "Number of significant pQTLs"
     ) +
     theme_classic(base_size = 12) +
     theme(

@@ -23,8 +23,8 @@ gpd <- read_tsv(gpd_path, col_types = cols())
 gpd <- gpd %>%
     mutate(
         `SNP Type` = case_when(
-            cis == 1 ~ "cis-SNP",
-            cis == 0 ~ "trans-SNP",
+            cis == 1 ~ "cis-SNPs",
+            cis == 0 ~ "trans-SNPs",
             TRUE ~ NA_character_  # Handle any unexpected values
         )
     ) %>%
@@ -37,10 +37,10 @@ gpd <- gpd %>%
 dataset_levels <- c("all", "male", "female")
 
 # SNP Type orders
-snp_type_levels <- c("cis-SNP", "trans-SNP")
+snp_type_levels <- c("cis-SNPs", "trans-SNPs")
 
 # Color-blind-friendly palette (Okabe-Ito palette) - using 2 colors
-gpd_colors <- c("#EB8928", "#275892")  # Orange for cis-SNP, Sky blue for trans-SNP
+gpd_colors <- c("#cbbe7b", "#4a6d9f")
 
 # Apply ordered factors
 gpd <- gpd %>%
@@ -95,7 +95,8 @@ create_publication_plot <- function(df, snp_colors) {
             legend.margin = margin(t = 10),
             legend.box = "horizontal",
             legend.box.margin = margin(0, 0, 0, 0),
-            legend.spacing.x = unit(0.5, "cm"),
+            legend.spacing.x = unit(1.5, "cm"),
+            legend.key.spacing.x = unit(1, "cm"),
             
             # Panel formatting
             panel.grid.major = element_blank(),
@@ -109,12 +110,13 @@ create_publication_plot <- function(df, snp_colors) {
         ) +
         guides(
             fill = guide_legend(
-                title.position = "left",     # Position title on the left
-                title.hjust = 0,            # Align title to the left
-                nrow = 1,                   # Single row for 2 categories
+                title.position = "left",
+                title.hjust = 0,
+                nrow = 1,
                 byrow = TRUE,
                 keywidth = unit(1.5, "lines"),
-                keyheight = unit(0.9, "lines")
+                keyheight = unit(0.9, "lines"),
+                label.spacing.x = unit(1, "cm")
             )
         )
 }

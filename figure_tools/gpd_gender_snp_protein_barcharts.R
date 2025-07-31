@@ -23,8 +23,8 @@ gpd <- read_tsv(gpd_path, col_types = cols())
 gpd <- gpd %>%
     mutate(
         `SNP Type` = case_when(
-            cis == 1 ~ "cis-SNP",
-            cis == 0 ~ "trans-SNP",
+            cis == 1 ~ "cis-SNPs",
+            cis == 0 ~ "trans-SNPs",
             TRUE ~ NA_character_  # Handle any unexpected values
         )
     ) %>%
@@ -49,10 +49,10 @@ message(paste("Number of unique protein-SNP Type combinations:", nrow(gpd_unique
 dataset_levels <- c("all", "male", "female")
 
 # SNP Type orders
-snp_type_levels <- c("cis-SNP", "trans-SNP")
+snp_type_levels <- c("cis-SNPs", "trans-SNPs")
 
 # Color-blind-friendly palette (Okabe-Ito palette) - using 2 colors
-gpd_colors <- c("#275892", "#EB8928")  # Orange for cis-SNP, Sky blue for trans-SNP
+gpd_colors <- c("#cbbe7b", "#4a6d9f")  # Orange for cis-SNP, Sky blue for trans-SNP
 
 # Apply ordered factors
 gpd_unique <- gpd_unique %>%

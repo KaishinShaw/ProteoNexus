@@ -53,7 +53,12 @@ final_plotB <- final_plotA /
 # Render the combined plot
 print(final_plotB)
 
+
 final_plotB <- final_plotB + 
-    plot_annotation(tag_levels = 'A')
+    plot_annotation(
+        tag_levels = "A",
+        theme = theme(
+            plot.tag = element_text(face = "bold", size = 18)
+        ))
 
 print(final_plotB)
