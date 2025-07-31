@@ -50,13 +50,13 @@ plot_df <- bind_rows(
     "Sex-combined" = summ_all,
     "Male"         = summ_male,
     "Female"       = summ_female,
-    .id = "Dataset"
+    .id = "Datasets"
 ) %>%
     pivot_longer(cols      = c(cis, trans),
                  names_to  = "Type",
                  values_to = "Count") %>%
     mutate(
-        Dataset = factor(Dataset, levels = c("Sex-combined", "Male", "Female")),
+        Dataset = factor(Datasets, levels = c("Sex-combined", "Male", "Female")),
         Type    = factor(Type, levels = c("cis", "trans"),
                          labels = c("cis-SNPs", "trans-SNPs"))
     )
@@ -84,7 +84,7 @@ p <- ggplot(plot_df, aes(x = Dataset, y = Count, fill = Type)) +
         expand = expansion(mult = c(0, 0.05))
     ) +
     labs(
-        x = "Dataset",
+        x = "Datasets",
         y = "Number of significant pQTLs"
     ) +
     theme_classic(base_size = 16) +
@@ -94,11 +94,11 @@ p <- ggplot(plot_df, aes(x = Dataset, y = Count, fill = Type)) +
         axis.ticks       = element_line(colour = "black"),
         axis.line        = element_line(colour = "black"),
         legend.position  = "bottom",
-        legend.title     = element_text(face = "bold"),
+        legend.title     = element_text(face = "bold", size = 12),
         legend.text      = element_text(size = 10),
         legend.key.size  = unit(0.6, "cm"),
         panel.background = element_rect(fill = "white", colour = NA),
-        panel.border     = element_rect(colour = "black", fill = NA, size = 0.8),  # 添加完整外框
+        panel.border     = element_rect(colour = "black", fill = NA, size = 0.8),
         panel.grid       = element_blank(),
         plot.margin      = margin(10, 10, 10, 10)
     )
