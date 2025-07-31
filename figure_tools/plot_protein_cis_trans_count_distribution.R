@@ -103,17 +103,17 @@ p <- ggplot(dist_combined,
     facet_wrap(~ type, scales = "free_y", ncol = 1,
                labeller = labeller(type = c(cis = "cis-SNPs", 
                                             trans = "trans-SNPs"))) +
-    scale_fill_manual(values = color_palette, name = "Dataset") +
+    scale_fill_manual(values = color_palette, name = "Datasets") +
     scale_y_continuous(expand = expansion(mult = c(0, 0.1)),
                        labels = comma) +
     labs(
         x = "Number of pQTLs",
         y = "Number of proteins"
     ) +
-    theme_bw(base_size = 12) +
+    theme_bw(base_size = 14) +
     theme(
         # Axis formatting
-        axis.title = element_text(size = 11, face = "bold"),
+        axis.title = element_text(size = 18, face = "bold"),
         axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10),
         axis.text.y = element_text(size = 10),
         axis.ticks = element_line(size = 0.5),
