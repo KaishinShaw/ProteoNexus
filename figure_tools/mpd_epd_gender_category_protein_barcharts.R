@@ -92,8 +92,8 @@ create_publication_plot <- function(df, category_colors) {
         scale_x_discrete(labels = c("Sex-combined", "Male", "Female")) +
         scale_fill_manual(values = category_colors) +
         labs(
-            x    = "Dataset",
-            y    = "Proportion of protein (%)",
+            x    = "Datasets",
+            y    = "Proportion of proteins (%)",
             fill = "Category"
         ) +
         theme_bw(base_size = 12) +
