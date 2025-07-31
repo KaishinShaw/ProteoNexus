@@ -107,7 +107,8 @@ create_publication_plot <- function(df, snp_colors) {
             legend.margin = margin(t = 10),
             legend.box = "horizontal",
             legend.box.margin = margin(0, 0, 0, 0),
-            legend.spacing.x = unit(0.5, "cm"),
+            legend.spacing.x = unit(1.5, "cm"),
+            legend.key.spacing.x = unit(1, "cm"),
             
             # Panel formatting
             panel.grid.major = element_blank(),
@@ -121,12 +122,13 @@ create_publication_plot <- function(df, snp_colors) {
         ) +
         guides(
             fill = guide_legend(
-                title.position = "left",     # Position title on the left
-                title.hjust = 0,            # Align title to the left
-                nrow = 1,                   # Single row for 2 categories
+                title.position = "left",
+                title.hjust = 0,
+                nrow = 1,
                 byrow = TRUE,
                 keywidth = unit(1.5, "lines"),
-                keyheight = unit(0.9, "lines")
+                keyheight = unit(0.9, "lines"),
+                label.spacing.x = unit(1, "cm")
             )
         )
 }
