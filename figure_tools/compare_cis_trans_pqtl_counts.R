@@ -24,9 +24,9 @@ library(scales)     # Axis formatting
 
 # 2. Define File Paths & Import Data ----------------------------------------
 base_dir    <- "C:/Users/shaok/Desktop/ProteoNexus_Citation/GRABBING"
-file_all    <- file.path(base_dir, "merged_sig_summ_all2_with_geneid1_filtered_annotated.csv")
-file_female <- file.path(base_dir, "merged_sig_summ_female2_with_geneid1_filtered_annotated.csv")
-file_male   <- file.path(base_dir, "merged_sig_summ_male2_with_geneid1_filtered_annotated.csv")
+file_all    <- file.path(base_dir, "pip075_merged_sig_summ_all2_with_geneid1_filtered_annotated.csv")
+file_female <- file.path(base_dir, "pip075_merged_sig_summ_female2_with_geneid1_filtered_annotated.csv")
+file_male   <- file.path(base_dir, "pip075_merged_sig_summ_male2_with_geneid1_filtered_annotated.csv")
 
 # Read each dataset with error handling
 tryCatch({
@@ -85,7 +85,7 @@ p <- ggplot(plot_df, aes(x = Dataset, y = Count, fill = Type)) +
     ) +
     labs(
         x = "Datasets",
-        y = "Number of significant pQTLs"
+        y = "Number of significant and causal pQTLs"
     ) +
     theme_classic(base_size = 16) +
     theme(
