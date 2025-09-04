@@ -4,7 +4,7 @@
 # Script:    update_and_filter_geneid1.R
 # Purpose:   Read two CSVs, overwrite geneid1 for specific protein_name values,
 #            then remove rows where geneid1 is NA or empty.
-# Usage:     Place this script in the directory with the two CSVs and run:
+# Usage:     Place this script in the directory with the 3 CSVs and run:
 #            Rscript update_and_filter_geneid1.R
 # -----------------------------------------------------------------------------
 
@@ -35,6 +35,7 @@ ensg_mapping <- c(
 
 # CSV files to process
 files <- c(
+  "merged_sig_summ_all2_with_geneid1.csv",
   "merged_sig_summ_female2_with_geneid1.csv",
   "merged_sig_summ_male2_with_geneid1.csv"
 )
